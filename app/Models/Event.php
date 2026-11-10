@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -31,5 +32,17 @@ class Event extends Model
     public function notes(): MorphMany
     {
         return $this->morphMany(Note::class, 'notable');
+    }
+
+    // Scope: only events that have not started yet
+    public function scopeUpcoming(Builder $query): Builder
+    {
+        return $query->where('starts_at', '>=', now());
+    }
+
+    // Scope with a parameter: only events at one venue
+    public function scopeAtVenue(Builder $query, int $venueId): Builder
+    {
+        return $query->where('venue_id', $venueId);
     }
 }
