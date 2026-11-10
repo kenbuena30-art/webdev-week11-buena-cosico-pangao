@@ -45,4 +45,16 @@ class Event extends Model
     {
         return $query->where('venue_id', $venueId);
     }
+
+    // JSONB filter, arrow form
+    public function scopeDressCodeArrow(Builder $query, string $dressCode): Builder
+    {
+        return $query->where('details->dress_code', $dressCode);
+    }
+
+    // JSONB filter, containment form
+    public function scopeDressCodeContains(Builder $query, string $dressCode): Builder
+    {
+        return $query->whereJsonContains('details', ['dress_code' => $dressCode]);
+    }
 }

@@ -14,6 +14,7 @@
 <body>
     <h1>Events</h1>
     <p class="count">Queries run: {{ $queryCount }}</p>
+    <p><strong>toSql():</strong> <code>{{ $sql }}</code></p>
 
     <table>
         <tr>
