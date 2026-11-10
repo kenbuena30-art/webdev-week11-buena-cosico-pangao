@@ -11,3 +11,4 @@ Route::get('/', function () {
 Route::get('/report', [ReportController::class, 'index']);
 
 Route::get('/events', [EventController::class, 'index']);
+Route::get('/events/search', [EventController::class, 'search']);

@@ -41,4 +41,29 @@ class EventController extends Controller
             'sql' => $sql,
         ]);
     }
+
+    public function search(Request $request)
+    {
+        DB::enableQueryLog();
+
+        $term = (string) $request->query('q', '');
+
+        $query = Event::with('venue')
+            ->withCount('participants')
+            ->whereFullText('description', $term)
+            ->orderBy('id')
+            ->limit(50);
+
+        $sql = $query->toSql() . '   | bindings: ' . json_encode($query->getBindings());
+
+        $events = $query->get();
+
+        $queries = DB::getQueryLog();
+
+        return view('events.index', [
+            'events' => $events,
+            'queryCount' => count($queries),
+            'sql' => $sql,
+        ]);
+    }
 }
