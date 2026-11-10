@@ -25,7 +25,7 @@
             <tr>
                 <td>{{ $event->title }}</td>
                 <td>{{ $event->venue->name }}</td>
-                <td>{{ $event->participants->count() }}</td>
+                <td>{{ $event->participants_count }}</td>
             </tr>
         @endforeach
     </table>

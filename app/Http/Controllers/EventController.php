@@ -11,14 +11,12 @@ class EventController extends Controller
     {
         DB::enableQueryLog();
 
-        // NAIVE VERSION: no eager loading
-        $events = Event::orderBy('id')->limit(50)->get();
-
-        // Touch the relations so the lazy queries actually run
-        foreach ($events as $event) {
-            $event->venue->name;
-            $event->participants->count();
-        }
+        // FIXED VERSION: eager loading + count
+        $events = Event::with('venue')
+            ->withCount('participants')
+            ->orderBy('id')
+            ->limit(50)
+            ->get();
 
         $queries = DB::getQueryLog();
 
