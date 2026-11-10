@@ -28,6 +28,15 @@ class EventController extends Controller
             }
         }
 
+        // Scopes chained with the filter above: ?venue_id=2 and ?upcoming=1
+        if ($request->filled('venue_id')) {
+            $query->atVenue((int) $request->query('venue_id'));
+        }
+
+        if ($request->filled('upcoming')) {
+            $query->upcoming();
+        }
+
         // SQL that Laravel produces, for the screenshots and README
         $sql = $query->toSql() . '   | bindings: ' . json_encode($query->getBindings());
 
