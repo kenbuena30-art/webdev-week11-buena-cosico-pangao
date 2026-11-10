@@ -3,74 +3,121 @@
 namespace Database\Seeders;
 
 use App\Models\Event;
-use App\Models\Note;
-use App\Models\Participant;
 use App\Models\Venue;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 class CampusEventsSeeder extends Seeder
 {
     public function run(): void
     {
+        $now = now();
+
         // Venues
-        $hall = Venue::create(['name' => 'Main Auditorium', 'address' => 'Building A', 'capacity' => 300]);
-        $lab = Venue::create(['name' => 'Computer Lab 2', 'address' => 'Building B', 'capacity' => 40]);
-        $court = Venue::create(['name' => 'Covered Court', 'address' => 'Sports Complex', 'capacity' => 500]);
+        $venueData = [
+            ['Main Auditorium', 'Building A', 300],
+            ['Computer Lab 2', 'Building B', 40],
+            ['Covered Court', 'Sports Complex', 500],
+            ['Library Hall', 'Building C', 120],
+            ['Science Room 1', 'Building D', 60],
+            ['Open Garden', 'Campus Grounds', 250],
+            ['Student Center', 'Building E', 150],
+            ['Art Studio', 'Building F', 35],
+        ];
 
-        // Events
-        $e1 = $hall->events()->create(['title' => 'Orientation Day', 'description' => 'Welcome for new students', 'starts_at' => now()->addDays(3)]);
-        $e2 = $hall->events()->create(['title' => 'Career Talk', 'description' => 'Industry speakers', 'starts_at' => now()->addDays(7)]);
-        $e3 = $hall->events()->create(['title' => 'Research Forum', 'description' => 'Student research showcase', 'starts_at' => now()->addDays(10)]);
-        $e4 = $lab->events()->create(['title' => 'Laravel Workshop', 'description' => 'Hands-on session', 'starts_at' => now()->addDays(5)]);
-        $e5 = $lab->events()->create(['title' => 'Database Bootcamp', 'description' => 'PostgreSQL basics', 'starts_at' => now()->addDays(12)]);
-        $e6 = $court->events()->create(['title' => 'Intramurals Opening', 'description' => 'Sports festival opening', 'starts_at' => now()->addDays(20)]);
+        foreach ($venueData as [$name, $address, $capacity]) {
+            Venue::create(['name' => $name, 'address' => $address, 'capacity' => $capacity]);
+        }
+        $venueIds = Venue::pluck('id')->all();
 
-        // Participants
-        $p = [];
-        foreach ([
-            ['Ana Reyes', 'ana@campus.test'],
-            ['Ben Cruz', 'ben@campus.test'],
-            ['Carla Santos', 'carla@campus.test'],
-            ['Dan Lopez', 'dan@campus.test'],
-            ['Ella Garcia', 'ella@campus.test'],
-            ['Franco Diaz', 'franco@campus.test'],
-            ['Gina Torres', 'gina@campus.test'],
-            ['Hugo Ramos', 'hugo@campus.test'],
-        ] as $i => [$name, $email]) {
-            $p[$i + 1] = Participant::create(['name' => $name, 'email' => $email]);
+        // Participants (250, inserted in chunks)
+        $firstNames = ['Ana', 'Ben', 'Carla', 'Dan', 'Ella', 'Franco', 'Gina', 'Hugo', 'Iris', 'Jon'];
+        $lastNames = ['Reyes', 'Cruz', 'Santos', 'Lopez', 'Garcia', 'Diaz', 'Torres', 'Ramos', 'Flores', 'Bautista'];
+        $rows = [];
+        for ($i = 1; $i <= 250; $i++) {
+            $rows[] = [
+                'name' => $firstNames[$i % 10] . ' ' . $lastNames[intdiv($i, 10) % 10],
+                'email' => "participant{$i}@campus.test",
+                'created_at' => $now,
+                'updated_at' => $now,
+            ];
+        }
+        foreach (array_chunk($rows, 100) as $chunk) {
+            DB::table('participants')->insert($chunk);
+        }
+        $participantIds = DB::table('participants')->pluck('id')->all();
+
+        // Description building blocks
+        $openers = ['Join us for', 'Come and experience', 'A hands-on session about', 'An open discussion on', 'A friendly gathering focused on', 'A student-led talk about'];
+        $topics = ['web development', 'database design', 'campus life', 'career planning', 'research methods', 'team sports', 'creative writing', 'community service', 'robotics', 'public speaking'];
+        $audiences = ['for first-year students.', 'for all departments.', 'for curious beginners.', 'for senior students.', 'for student organizations.', 'for faculty and staff.'];
+        $closers = ['Snacks will be provided.', 'Bring a friend.', 'Seats are limited.', 'Open to everyone on campus.', 'Certificates will be given.', 'Come early for the best seats.'];
+        $types = ['Workshop', 'Talk', 'Forum', 'Meetup', 'Seminar', 'Showcase'];
+
+        // Details building blocks
+        $dressCodes = ['casual', 'smart casual', 'formal', 'school uniform'];
+        $tagPool = ['free', 'outdoor', 'indoor', 'food', 'networking', 'beginner'];
+
+        // Events (20,000, inserted in chunks of 1,000)
+        $rows = [];
+        for ($i = 1; $i <= 20000; $i++) {
+            $topic = $topics[array_rand($topics)];
+
+            $description = $openers[array_rand($openers)] . ' ' . $topic . ' '
+                . $audiences[array_rand($audiences)] . ' ' . $closers[array_rand($closers)];
+
+            // Rare word: "hackathon" appears in only 0.5% of events
+            if ($i % 200 === 0) {
+                $description .= ' Includes a hackathon challenge.';
+            }
+
+            // Rare value: dress_code "costume" appears in only 0.4% of events
+            $dressCode = ($i % 250 === 0) ? 'costume' : $dressCodes[array_rand($dressCodes)];
+
+            $details = [
+                'dress_code' => $dressCode,
+                'capacity' => mt_rand(20, 500),
+                'tags' => array_slice($tagPool, mt_rand(0, 3), 2),
+            ];
+
+            $rows[] = [
+                'venue_id' => $venueIds[array_rand($venueIds)],
+                'title' => ucfirst($topic) . ' ' . $types[array_rand($types)] . ' #' . $i,
+                'description' => $description,
+                'starts_at' => $now->copy()->addDays(mt_rand(-180, 180))->setTime(mt_rand(8, 18), 0)->toDateTimeString(),
+                'details' => json_encode($details),
+                'created_at' => $now,
+                'updated_at' => $now,
+            ];
+
+            if (count($rows) === 1000) {
+                DB::table('events')->insert($rows);
+                $rows = [];
+            }
         }
 
-        // Registrations (12 total: 9 registered, 3 waitlisted)
-        $e1->participants()->attach([
-            $p[1]->id => ['status' => 'registered'],
-            $p[2]->id => ['status' => 'registered'],
-            $p[3]->id => ['status' => 'waitlisted'],
-        ]);
-        $e2->participants()->attach([
-            $p[1]->id => ['status' => 'registered'],
-            $p[4]->id => ['status' => 'registered'],
-        ]);
-        $e3->participants()->attach([
-            $p[2]->id => ['status' => 'registered'],
-            $p[5]->id => ['status' => 'registered'],
-            $p[6]->id => ['status' => 'waitlisted'],
-        ]);
-        $e4->participants()->attach([
-            $p[3]->id => ['status' => 'registered'],
-            $p[7]->id => ['status' => 'registered'],
-        ]);
-        $e5->participants()->attach([
-            $p[8]->id => ['status' => 'registered'],
-            $p[4]->id => ['status' => 'waitlisted'],
-        ]);
-        // $e6 intentionally has no registrations
+        // Registrations (first 150 events get 3 participants each)
+        $eventIds = DB::table('events')->orderBy('id')->limit(150)->pluck('id');
+        $pivotRows = [];
+        foreach ($eventIds as $eventId) {
+            foreach (collect($participantIds)->random(3) as $participantId) {
+                $pivotRows[] = [
+                    'event_id' => $eventId,
+                    'participant_id' => $participantId,
+                    'status' => mt_rand(1, 4) === 1 ? 'waitlisted' : 'registered',
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ];
+            }
+        }
+        foreach (array_chunk($pivotRows, 200) as $chunk) {
+            DB::table('event_participant')->insert($chunk);
+        }
 
-        // Notes (on both events and venues)
-        $e1->notes()->create(['body' => 'Bring student ID.']);
-        $e1->notes()->create(['body' => 'Registration opens at 8 AM.']);
-        $e4->notes()->create(['body' => 'Bring your own laptop.']);
-        $hall->notes()->create(['body' => 'Projector needs a technician.']);
-        $lab->notes()->create(['body' => 'Maximum of 40 seats.']);
-        $court->notes()->create(['body' => 'Closed when it rains.']);
+        // Notes
+        $firstEvent = Event::orderBy('id')->first();
+        $firstEvent->notes()->create(['body' => 'Bring student ID.']);
+        $firstEvent->notes()->create(['body' => 'Registration opens at 8 AM.']);
+        Venue::orderBy('id')->first()->notes()->create(['body' => 'Projector needs a technician.']);
     }
 }
