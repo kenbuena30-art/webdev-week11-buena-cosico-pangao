@@ -9,9 +9,12 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class Event extends Model
 {
-    protected $fillable = ['venue_id', 'title', 'description', 'starts_at'];
+    protected $fillable = ['venue_id', 'title', 'description', 'starts_at', 'details'];
 
-    protected $casts = ['starts_at' => 'datetime'];
+    protected $casts = [
+        'starts_at' => 'datetime',
+        'details' => 'array',
+    ];
 
     public function venue(): BelongsTo
     {
